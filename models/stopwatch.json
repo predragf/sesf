@@ -1,0 +1,171 @@
+{
+  "Or": {
+    "sa":"",
+    "p": "Stopwatch",
+    "T": [{"e": "", "c": "", "ca": "", "ta":"", "d": ""}],
+    "SD": [
+      {
+        "Stop": {
+        "A": {
+          "en": "",
+          "du": "",
+          "ex": ""
+        },
+        "Or":{
+          "sa":"",
+          "p": "Stopwatch.Stop",
+          "T": [{"e": "", "c": "", "ca": "", "ta":"", "d": ""}],
+          "SD": [{
+          				"Stopwatch.Stop.Reset": {
+          					"A": {
+          						"en": "",
+          						"du": "",
+          						"ex": ""
+          					},
+          					"Ti": [{
+          						"e": "LAP",
+          						"c": "",
+          						"ca": "cent=0;sec=0;min=0;dcent=0;dsec=0;dmin=0",
+          						"ta": "",
+          						"d": "j1"
+          					}],
+          					"To": [{
+          						"e": "START",
+          						"c": "",
+          						"ca": "",
+          						"ta": "",
+          						"d": "Stopwatch.Run.Running"
+          					}]
+          				}
+          			},
+                {
+                		"Stopwatch.Stop.Lap_stop": {
+                					"A": {
+                						"en": "",
+                						"du": "",
+                						"ex": ""
+                					},
+                					"Ti": [],
+                					"To": [{
+                						"e": "LAP",
+                						"c": "",
+                						"ca": "",
+                						"ta": "",
+                						"d": "Stopwatch.Stop.Reset"
+                					},
+                          {
+                            "e": "START",
+                            "c": "",
+                            "ca": "",
+                            "ta": "",
+                            "d": "Stopwatch.Running.Lap"
+                          }]
+                				}
+                }]
+        }
+      }
+      },
+      {
+        "Run": {
+        "A": {
+          "en": "",
+          "du": "",
+          "ex": ""
+        },
+        "Or":{
+          "sa":"",
+          "p": "Stopwatch.Stop",
+          "T": [{"e": "", "c": "", "ca": "", "ta":"", "d": ""}],
+          "SD": [{
+          				"Stopwatch.Run.Running": {
+          					"A": {
+          						"en": "",
+          						"du": "dcent=cent;dsec=sec;dmin=min",
+          						"ex": ""
+          					},
+          					"Ti": [{
+          						"e": "TIC",
+          						"c": "",
+          						"ca": "cent=cent+1",
+          						"ta": "",
+          						"d": "j2"
+          					}],
+          					"To": [
+                    {
+          						"e": "START",
+          						"c": "",
+          						"ca": "",
+          						"ta": "",
+          						"d": "Stopwatch.Stop.Reset"
+          					},
+                    {
+          						"e": "LAP",
+          						"c": "",
+          						"ca": "",
+          						"ta": "",
+          						"d": "Stopwatch.Run.Lap"
+          					}]
+          				}
+          			},
+                {
+                		"Stopwatch.Run.Lap": {
+                					"A": {
+                						"en": "",
+                						"du": "",
+                						"ex": ""
+                					},
+                					"Ti": [],
+                					"To": [
+                          {
+                						"e": "LAP",
+                						"c": "",
+                						"ca": "",
+                						"ta": "",
+                						"d": "Stopwatch.Run.Running"
+                					},
+                          {
+                            "e": "START",
+                            "c": "",
+                            "ca": "",
+                            "ta": "",
+                            "d": "Stopwatch.Stop.Lap_stop"
+                          }],
+                          "J": {"j2": [{
+                						"e": "",
+                						"c": "cent==100",
+                						"ca": "cent=0;sec=sec+1",
+                						"ta": "",
+                						"d": "j3"
+                					},
+                          {
+                						"e": "",
+                						"c": "",
+                						"ca": "cent=0;sec=sec+1",
+                						"ta": "",
+                						"d": "j4"
+                					}], "j3": [
+                            {
+                  						"e": "",
+                  						"c": "sec==60",
+                  						"ca": "sec=0;min=min+1",
+                  						"ta": "",
+                  						"d": "j4"
+                  					},
+                            {
+                  						"e": "",
+                  						"c": "",
+                  						"ca": "",
+                  						"ta": "",
+                  						"d": "j4"
+                  					}
+                            ], "j4": []}
+                				}
+                }
+              ],
+          "J":{}
+        }
+      }
+      }
+    ]
+  }
+}

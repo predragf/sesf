@@ -796,12 +796,8 @@ def executeSymbolically(program):
 
 
 def main():
-    _program = loadProgram("./models/program.json")
-    result = executeSymbolically(_program)
-    print "results start from here\n"
-    for itm in result:
-        print itm
-        print "\n"
+    _program = loadProgram("./models/stopwatch.json")
+    print _program
 
 
 main()
