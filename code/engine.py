@@ -803,7 +803,5 @@ def main():
         print itm
         print "\n"
 
-    print getNumberOfAssignments("true && [neg (y == 0 && z < 5)] && [neg (y == 0 && z > 5)]")
-
 
 main()
