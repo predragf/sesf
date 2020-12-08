@@ -1,6 +1,7 @@
 import copy
 import json
 import sys
+import re
 
 
 def currentFuncName(n=0): return sys._getframe(n + 1).f_code.co_name
@@ -206,6 +207,12 @@ def getCompositionChildStateDefinitionByPath(composition, statedefinitionpath):
     if result is None and candidate is not None:
         result = candidate
     return result, activatedSDPath
+
+
+def getNumberOfAssignments(expression=""):
+    assignmentExpression = r"\[(.*?)\]"  # r'\[.+\]'
+    allMatches = re.findall(assignmentExpression, expression)
+    return len(allMatches)
 # helper functions end
 
 
@@ -219,9 +226,11 @@ def tFire(transition, ss, tv):
     ss, tv = deepCopy(ss, tv)
     ca = parseExpressionForAdding(transition.get("ca", ""))
     c = parseExpressionForAdding(transition.get("c", ""))
-    ss["delta"] = "{0}{1}".format(ss.get("delta", ""), ca)
-    ss["pc"] = "{1} && {0}".format(c, ss.get("pc", ""))
+    ss["pc"] = "{0} && {1}".format(ss.get("pc", ""), c)
+    if c != "":
+        ss["pc"] = "{0}_{1}".format(ss.get("pc", ""), getNumberOfAssignments(ss["delta"]))
     ss["dtree"] = "{0}[{1}]".format(ss.get("dtree", ""), "t-fire-{0}".format(c))
+    ss["delta"] = "{0}{1}".format(ss.get("delta", ""), ca)
     # transition returns only 1 symbolic state and one tv
     return ss, {"type": tvFire, "d": transition.get("d", ""), "a": transition.get("ta", "")}
 
@@ -233,16 +242,23 @@ def tNoFire(transition, ss, tv):
     print "------"
     # for debugging purposes
     ss, tv = deepCopy(ss, tv)
-    c = transition.get("c", "")
-    ss["pc"] = "{1} && [neg ({0})]".format(c, ss.get("pc", ""))
+    c = transition.get("c", "") if transition.get("c", "") != "" else "True"
+    ss["pc"] = "{0} && [neg ({1})]".format(ss.get("pc", ""), c)
+    if c != "True":
+        ss["pc"] = "{0}_{1}".format(ss["pc"], getNumberOfAssignments(ss["delta"]))
     ss["dtree"] = "{0}[{1}]".format(ss.get("dtree", ""), "t-no-fire-{0}".format(c))
     # transition returns only 1 symbolic state and one tv
     return ss, {"type": tvNo}
 # t-rules end
 
-# T-rules start
-# the T-rules now do not implement the T-rules for junctions. That will
-# be in the next release
+# J-rules start
+
+
+def executeJunction(junction, J, ss, tv):
+    jList = J.get(junction, [])
+    for _tss, _ttv in executeTList(jList):
+        if _ttv.get("type", "") == tvFire:
+            pass
 
 
 def executeTList(tList, ss, tv):
@@ -255,11 +271,19 @@ def executeTList(tList, ss, tv):
     # TList returns a set of symbolic states and tvs
     returnTuples = []
     if len(wtList) == 0:
+        wss["dtree"] = "{0}[{1}]".format(wss.get("dtree", ""), "T-empty")
         return [(wss, {"type": tvEnd})]
     head = wtList.pop(0)
-    returnTuples.append(tFire(head, wss, wtv))
+    _sstFire, _tvtFire = tFire(head, wss, wtv)
+    _sstFire["dtree"] = "{0}[{1}]".format(_sstFire.get("dtree", ""), "T-fire")
+    returnTuples.append(tuple((_sstFire, _tvtFire)))
     _ssTnf, _tvTnf = tNoFire(head, wss, wtv)
-    returnTuples.extend(executeTList(wtList, _ssTnf, _tvTnf))
+    if len(wtList) > 0:
+        _ssTnf["dtree"] = "{0}[{1}]".format(_ssTnf.get("dtree", ""), "T-no")
+        returnTuples.extend(executeTList(wtList, _ssTnf, _tvTnf))
+    else:
+        _ssTnf["dtree"] = "{0}[{1}]".format(_ssTnf.get("dtree", ""), "T-no-Last")
+        returnTuples.append(tuple((_ssTnf, _tvTnf)))
     return returnTuples
 
 # T-rules end
@@ -667,8 +691,40 @@ def executeOr(orComposition, J={}, ss=defaultSS(), tv=None, p=""):
     return resultTuples
 
 
-def executeAnd(andComposition, ss, tv):
-    # and = (b, SD)
+def and_rule(andComposition, J, ss, tv):
+    _andC, _ss, _tv = deepCopy(andComposition, ss, tv)
+    for sdWrap in andComposition.get("SD", []):
+        pass
+
+
+def and_init(andComposition, J, ss, tv, p=""):
+    _andC, _ss, _tv, _p = deepCopy(andComposition, ss, tv, p)
+    for sdWrap in andComposition.get("SD", []):
+        sdName = sdWrap.keys()[0]
+        sd = sdWrap[sdName]
+        # this loop should execute only once
+        for _sd, _ss, _tv in sd_init(sd, _ss, _tv, p):
+            _andC = setCompositionStateDefinitionByPath(_andC, _sd, sdName)
+    return[tuple((_andC, _ss, _tv))]
+
+
+def and_exit(andComposition, J, ss, tv):
+    _andC, _ss, _tv, _p, _sd = deepCopy(andComposition, ss, tv, p, sd)
+    for sdWrap in andComposition.get("SD", []):
+        sdName = sdWrap.keys()[0]
+        sd = sdWrap[sdName]
+        # this loop should execute only once
+        for _sd, _ss, _tv in sd_exit(_sd, _ss, _tv, p):
+            _andC = setCompositionStateDefinitionByPath(_andC, _sd, sdName)
+    return[tuple((_andC, _ss, _tv))]
+
+
+def executeAnd(andComposition, J={}, ss=defaultSS(), tv=None, p=""):
+    andComposition, ss, tv, p = deepCopy(andComposition, ss, tv, p)
+    resultTuples = []
+    if tv is not None and tv.get("type", "") in [tvEnd, tvNo]:
+        resultTuples.extend()
+
     return []
 
 
@@ -746,6 +802,8 @@ def main():
     for itm in result:
         print itm
         print "\n"
+
+    print getNumberOfAssignments("true && [neg (y == 0 && z < 5)] && [neg (y == 0 && z > 5)]")
 
 
 main()
