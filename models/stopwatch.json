@@ -2,10 +2,10 @@
   "Or": {
     "sa":"",
     "p": "Stopwatch",
-    "T": [{"e": "", "c": "", "ca": "", "ta":"", "d": ""}],
+    "T": [{"e": "", "c": "", "ca": "", "ta":"", "d": "Stopwatch.Stop"}],
     "SD": [
       {
-        "Stop": {
+        "Stopwatch.Stop": {
         "A": {
           "en": "",
           "du": "",
@@ -14,7 +14,7 @@
         "Or":{
           "sa":"",
           "p": "Stopwatch.Stop",
-          "T": [{"e": "", "c": "", "ca": "", "ta":"", "d": ""}],
+          "T": [{"e": "", "c": "", "ca": "", "ta":"", "d": "Stopwatch.Stop.Reset"}],
           "SD": [{
           				"Stopwatch.Stop.Reset": {
           					"A": {
@@ -35,7 +35,8 @@
           						"ca": "",
           						"ta": "",
           						"d": "Stopwatch.Run.Running"
-          					}]
+          					}],
+                    "J":{"j1":[]}
           				}
           			},
                 {
@@ -58,15 +59,16 @@
                             "c": "",
                             "ca": "",
                             "ta": "",
-                            "d": "Stopwatch.Running.Lap"
+                            "d": "Stopwatch.Run.Lap"
                           }]
                 				}
                 }]
-        }
+        },
+        "Ti": []
       }
       },
       {
-        "Run": {
+        "Stopwatch.Run": {
         "A": {
           "en": "",
           "du": "",
@@ -74,8 +76,8 @@
         },
         "Or":{
           "sa":"",
-          "p": "Stopwatch.Stop",
-          "T": [{"e": "", "c": "", "ca": "", "ta":"", "d": ""}],
+          "p": "Stopwatch.Run",
+          "T": [],
           "SD": [{
           				"Stopwatch.Run.Running": {
           					"A": {
@@ -104,7 +106,36 @@
           						"ca": "",
           						"ta": "",
           						"d": "Stopwatch.Run.Lap"
-          					}]
+          					}],
+                    "J":{
+                      "j2": [
+                    {
+          						"e": "",
+          						"c": "cent==100",
+          						"ca": "cent=0;sec=sec+1",
+          						"ta": "",
+          						"d": "j3"
+          					},{
+          						"e": "",
+          						"c": "",
+          						"ca": "",
+          						"ta": "",
+          						"d": "j4"
+          					}],
+                    "j3": [{
+          						"e": "",
+          						"c": "sec==60",
+          						"ca": "sec=0;min=min+1",
+          						"ta": "",
+          						"d": "j4"
+          					},{
+          						"e": "",
+          						"c": "",
+          						"ca": "",
+          						"ta": "",
+          						"d": "j4"
+          					}],
+                    "j4":[]}
           				}
           			},
                 {
@@ -130,35 +161,7 @@
                             "ta": "",
                             "d": "Stopwatch.Stop.Lap_stop"
                           }],
-                          "J": {"j2": [{
-                						"e": "",
-                						"c": "cent==100",
-                						"ca": "cent=0;sec=sec+1",
-                						"ta": "",
-                						"d": "j3"
-                					},
-                          {
-                						"e": "",
-                						"c": "",
-                						"ca": "cent=0;sec=sec+1",
-                						"ta": "",
-                						"d": "j4"
-                					}], "j3": [
-                            {
-                  						"e": "",
-                  						"c": "sec==60",
-                  						"ca": "sec=0;min=min+1",
-                  						"ta": "",
-                  						"d": "j4"
-                  					},
-                            {
-                  						"e": "",
-                  						"c": "",
-                  						"ca": "",
-                  						"ta": "",
-                  						"d": "j4"
-                  					}
-                            ], "j4": []}
+                          "J": {}
                 				}
                 }
               ],
