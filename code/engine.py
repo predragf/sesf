@@ -289,9 +289,8 @@ def tFire(transition, ss, tv):
     ca = parseExpressionForAdding(transition.get("ca", ""))
     c = parseExpressionForAdding(transition.get("c", ""))
     event = parseExpressionForAdding(transition.get("e", ""))
-    ss["pc"] = "{0} && {1}".format(ss.get("pc", ""), c)
     if c not in ["[True]", ""]:
-        ss["pc"] = "{0}_{1}".format(ss.get("pc", ""), getNumberOfAssignments(ss["delta"]))
+        ss["pc"] = "{0} && {1}_{2}".format(ss.get("pc", ""), c, getNumberOfAssignments(ss["delta"]))
     if event != "":
         ss["pc"] = "{0} && {1}".format(ss.get("pc", ""), event)
     ss["dtree"] = "{0}[{1}]".format(ss.get("dtree", ""), "t-fire-{0}".format(c))
@@ -910,11 +909,21 @@ def main():
     programComposition = _program.get("Or", {})
     rezult = executeSymbolically(_program)
     final = []
+    unfeasible = []
+    duplicates = []
     for itm in rezult:
         if itm not in final:
-            final.append(itm)
+            if "[neg ([True])]" not in itm.get("pc", ""):
+                final.append(itm)
+            else:
+                unfeasible.append(itm)
+        else:
+            duplicates.append(itm)
 
+    print len(rezult)
     print len(final)
+    print len(unfeasible)
+    print len(duplicates)
     for itm in final:
         print itm
         print "\n"
