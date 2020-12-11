@@ -408,7 +408,7 @@ def sd_init(stateDefinition, ss, tv, p, events):
     cType = getStateDefinitionCompositionType(stateDefinition)
     _composition = stateDefinition.get(cType, {})
     # here one of the or-inits shall be called
-    for _C, _ss, _tv in initialize_or(_composition, stateDefinition.get("J", {}), ss, None, p, events):
+    for _C, _ss, _tv in composition_init(_composition, stateDefinition.get("J", {}), ss, None, p, events):
         _sd, _C, _ss, _tv = deepCopy(stateDefinition, _C, _ss, _tv)
         _sd[cType] = _C
         _ss["dtree"] = "{0}[{1}]".format(_ss.get("dtree", ""), "sd-init")
@@ -435,7 +435,8 @@ def sd_exit(stateDefinition, ss, tv, events):
     # this can be only or_exit (update when AND component is developed)
     cType = getStateDefinitionCompositionType(stateDefinition)
     _composition = stateDefinition.get(cType, {})
-    for _C, _ssC, _tvC in or_exit(_composition, stateDefinition.get("J", {}), ss, tv, events):
+
+    for _C, _ssC, _tvC in composition_exit(_composition, stateDefinition.get("J", {}), ss, tv, events):
         # _ss has the value from the execution of the internal component
         _sd, _C, _ssC, _tvC = deepCopy(stateDefinition, _C, _ssC, _tvC)
         # update delta with exit action
@@ -471,7 +472,7 @@ def sd_fire(stateDefinition, ss, tv, events):
     # or-exit shall be called here - update for AND component once developed
     cType = getStateDefinitionCompositionType(stateDefinition)
     _composition = stateDefinition.get(cType, {})
-    for _C, _ssC, _tvC in or_exit(_composition, [], ss, tv, events):
+    for _C, _ssC, _tvC in composition_exit(_composition, [], ss, tv, events):
         _sd, _C, _ssC, _tv = deepCopy(stateDefinition, _C, _ssC, tv)
         _ssC["delta"] = "{0}{1}".format(_ssC["delta"], exAction)
         _ssC["dtree"] = "{0}[{1}]".format(_ssC.get("dtree", ""), "sd-fire")
@@ -526,7 +527,7 @@ def executeSD(stateDefinition, ss, tv, p="", events=[]):
                 _sd, _ssTi, _tvTi = deepCopy(wsd, _ssTi, _tvTi)
                 _c1 = _sd.get(cType, {})
                 destinationPath = _tvTi.get("d", "") if _tvTi is not None else ""
-                for _c1C, _ssC, _tvC in executeOr(_c1, {}, _ssTi, _tvTi, destinationPath, events):
+                for _c1C, _ssC, _tvC in executeComposition(_c1, {}, _ssTi, _tvTi, destinationPath, events):
                     _sSd, _c1C, _ssC, _tvC = deepCopy(_sd, _c1C, _ssC, _tvC)
                     _sSd[cType] = _c1C
                     if _tvC.get("type", "") == tvFire:
@@ -752,7 +753,7 @@ def executeOr(orComposition, J={}, ss=defaultSS(), tv=None, p="", events=[]):
 
     # if there is no active state, then it must be one of the initializations
     if activeStateDefinitionPath == "":
-        resultTuples.extend(initialize_or(orComposition, J, ss, tv, p, events))
+        resultTuples.extend(composition_init(orComposition, J, ss, tv, p, events))
     else:
         # just to make sure that tv is not None, so it does not raise
         # an exception, although in principle it should never happen
@@ -811,44 +812,55 @@ def and_init(andComposition, J, ss, tv, p="", events=[]):
 
 
 def and_exit(andComposition, J, ss, tv, events):
-    _andC, _ss, _tv, _p, _sd = deepCopy(andComposition, ss, tv, p, sd)
+    _andC, _ss, _tv = deepCopy(andComposition, ss, tv)
     for sdWrap in andComposition.get("SD", []):
         sdName = sdWrap.keys()[0]
         sd = sdWrap[sdName]
         # this loop should execute only once
-        for _sd, _ss, _tv in sd_exit(_sd, _ss, _tv, p, events):
+        for _sd, _ss, _tv in sd_exit(_sd, _ss, _tv, "", events):
             _andC = setCompositionStateDefinitionByPath(_andC, _sd, sdName)
+    # if the composition has no internal components, then we have to make the
+    # transition value End
+    if len(andComposition.get("SD", [])) < 1:
+        tv = {"type": tvEnd}
     return[tuple((_andC, _ss, _tv))]
 
 
 def executeAnd(andComposition, J={}, ss=defaultSS(), tv=None, p="", events=[]):
-    andComposition, ss, tv, p = deepCopy(andComposition, ss, tv, p)
-    resultTuples = []
-    if tv is not None and tv.get("type", "") in [tvEnd, tvNo]:
-        pass
-
-    return []
+    if andComposition.get("b", "") == "True":
+        return and_rule(andComposition, J, ss, tv, events)
+    else:
+        return and_init(andComposition, J, ss, tv, events)
 
 
-def executeComposition(composition, J={}, ss=defaultSS(), tv={}, p="", events=[]):
-    # this function is needed because we have two types of compositions
-    # for debugging purposes
-    print currentFuncName()
-    print events
-    print composition
-    print "------"
-    # for debugging purposes
-    composition, J, ss, tv = deepCopy(composition, J, ss, tv)
-    compositionType = "" if len(composition.keys()) < 1 else composition.keys()[0]
-    # lets say that end should denote end of derrivation
-    resultTuples = [(composition, ss,
-                     {"type": tvEnd})] if compositionType == "" else []
+def composition_exit(composition, J, ss, tv, events):
+    # this means that and_exit is called only for valid And composition. In
+    # case of a valid OR composition or empty composition {}, then or_exit
+    # is called
+    if len(composition.keys()) == 2:
+        return and_exit(composition, J, ss, tv, events)
+    else:
+        return or_exit(composition, J, ss, tv, events)
 
-    if compositionType == "Or":
-        resultTuples = executeOr(composition.get(compositionType), J, ss, tv, p, events)
-    elif compositionType == "And":
-        resultTuples = executeAnd(composition.get(compositionType), ss, tv, events)
-    return resultTuples
+
+def composition_init(composition, J, ss, tv, p, events):
+    # this means that and_init is called only for valid And composition. In
+    # case of a valid OR composition or empty composition {}, then initalize_or
+    # is called
+    if len(composition.keys()) == 2:
+        return and_init(composition, J, ss, tv, events)
+    else:
+        return initialize_or(composition, J, ss, tv, p, events)
+
+
+def executeComposition(composition, J={}, ss=defaultSS(), tv=None, p="", events=[]):
+    # this means that executeAnd is called only for valid And composition. In
+    # case of a valid OR composition or empty composition {}, then executeOr
+    # is called
+    if len(composition.keys()) == 2:
+        return executeAnd(composition, J, ss, tv, events)
+    else:
+        return executeOr(composition, J, ss, tv, p, events)
 
 
 def executeSymbolicallyRecursive(program, ss, tv={}, exploredExecutions=set()):
@@ -868,7 +880,7 @@ def executeSymbolicallyRecursive(program, ss, tv={}, exploredExecutions=set()):
     # on the initialization edges
     for event in events:
         exploredExecutions.add("{0}{1}".format(currentProgramActiveStatesString, event))
-        orExecutions = executeOr(program, program.get("J", {}), _ss, _tv, "", [event])
+        orExecutions = executeComposition(program, program.get("J", {}), _ss, _tv, "", [event])
         # return orExecutions, set()
         # this will not execute
         for _newProgram, _ssOr, _tvOr in orExecutions:
@@ -893,20 +905,17 @@ def executeSymbolicallyRecursive(program, ss, tv={}, exploredExecutions=set()):
 
 
 def executeSymbolically(program):
-    # a program is always a sd for or-composition
-    # return only the transition relation
-    ss = {"delta": "", "pc": "true", "dtree": ""}
-    # get the or composition from the program
-    # the program is ALWAYS an Or-composition
-    programComposition = program.get("Or", {})
-    # return only the transitionRelation
+    # at the top level, a Stateflow program is ALWAYS an Or-composition
 
-    return executeSymbolicallyRecursive(programComposition, ss, None)[0]
+    # return only the transitionRelation, which is the first component
+    # of the return tuple of the recursive function
+    return executeSymbolicallyRecursive(program.get("Or", {}), defaultSS(), None)[0]
 
 
 def main():
     _program = loadProgram("./models/stopwatch.json")
     programComposition = _program.get("Or", {})
+
     rezult = executeSymbolically(_program)
     final = []
     unfeasible = []
