@@ -808,6 +808,7 @@ def and_init(andComposition, J, ss, tv, p="", events=[]):
         # this loop should execute only once
         for _sd, _ss, _tv in sd_init(sd, _ss, _tv, p, events):
             _andC = setCompositionStateDefinitionByPath(_andC, _sd, sdName)
+    _andC["b"] = "True"
     return[tuple((_andC, _ss, _tv))]
 
 
@@ -815,14 +816,11 @@ def and_exit(andComposition, J, ss, tv, events):
     _andC, _ss, _tv = deepCopy(andComposition, ss, tv)
     for sdWrap in andComposition.get("SD", []):
         sdName = sdWrap.keys()[0]
-        sd = sdWrap[sdName]
+        _sd = sdWrap[sdName]
         # this loop should execute only once
         for _sd, _ss, _tv in sd_exit(_sd, _ss, _tv, "", events):
             _andC = setCompositionStateDefinitionByPath(_andC, _sd, sdName)
-    # if the composition has no internal components, then we have to make the
-    # transition value End
-    if len(andComposition.get("SD", [])) < 1:
-        tv = {"type": tvEnd}
+    _andC["b"] = "False"
     return[tuple((_andC, _ss, _tv))]
 
 
