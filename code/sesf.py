@@ -360,7 +360,13 @@ def executeTList(tList, J, ss, tv, events):
         for _ssj, _tvj in T_fire_J_N(_tvtFire.get("d", ""), J, _sstFire, _tvtFire, events):
             _ssj, _tvj = deepCopy(_ssj, _tvj)
             _ssj["dtree"] = "{0}[{1}]".format(_ssj.get("dtree", ""), "T-fire")
-            returnTuples.append(tuple((_ssj, _tvj)))
+            if len(wtList) == 0:
+                returnTuples.append(tuple((_ssj, _tvj)))
+            else:
+                if _tvj.get("type", "") == tvFire:
+                    returnTuples.append(tuple((_ssj, _tvj)))
+                else:
+                    returnTuples.extend(executeTList(wtList, J, _ssj, _tvj, events))
     else:
         _sstFire["dtree"] = "{0}[{1}]".format(_sstFire.get("dtree", ""), "T-fire")
         returnTuples.append(tuple((_sstFire, _tvtFire)))
@@ -520,7 +526,7 @@ def executeSD(stateDefinition, ss, tv, p="", events=[]):
     durationAction = getStateDefinitionActionString(wsd, "du")
 
     for _ssTo, _tvTo in executeTList(wsd.get("To", []), wsd.get("J", {}), wss, wtv, events):
-        __ssTo, _tvTo = deepCopy(_ssTo, _tvTo)
+        _ssTo, _tvTo = deepCopy(_ssTo, _tvTo)
         if _tvTo.get("type", "") in [tvEnd, tvNo]:
             _ssTo["delta"] = "{0}{1}".format(_ssTo["delta"], durationAction)
             for _ssTi, _tvTi in executeTList(wsd.get("Ti", []), wsd.get("J", {}), _ssTo, _tvTo, events):
@@ -927,13 +933,14 @@ def main():
         else:
             duplicates.append(itm)
 
-    print len(rezult)
-    print len(final)
-    print len(unfeasible)
-    print len(duplicates)
-    for itm in final:
+    print "all {0}".format(len(rezult))
+    print "final {0}".format(len(final))
+    print "unfeasible {0}".format(len(unfeasible))
+    print "duplicates {0}".format(len(duplicates))
+    for itm in []:
         print itm
         print "\n"
+    print "++++++++++++++++++++++"
 
 
 main()
