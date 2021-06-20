@@ -1,11 +1,8 @@
-import copy
 import json
 import sys
 import re
-
-
-def currentFuncName(n=0): return sys._getframe(n + 1).f_code.co_name
-
+import copy
+import utils
 
 # global variables definition start
 tvEnd = "End"
@@ -20,33 +17,15 @@ def defaultSS():
     return {"delta": "", "pc": "true", "dtree": ""}
 
 
-def openAndReadFile(filename):
-    f = None
-    fileContents = ""
-    try:
-        f = open(filename, "r")
-        fileContents = f.read()
-
-    except Exception as exc:
-        print exc
-
-    finally:
-        if f is not None and not f.closed:
-            f.close()
-    return fileContents
-
-
 def loadProgram(programLocation):
-    fileContents = openAndReadFile(programLocation)
-    return json.loads(fileContents)
-
-
-def deepCopy(*arguments):
-    returnArguments = []
-    for argument in arguments:
-        returnArguments.append(copy.deepcopy(argument))
-    return tuple(returnArguments)
-
+    try:
+        _file = utils.openFile(programLocation)
+        program = json.load(_file)
+        _file.close()
+    except Exception:
+        print("Problems opening file. Script will run on empty stateflow program!")
+        program = dict()
+    return program
 
 def getStateDefinitionComposition(stateDefinition):
     composition = stateDefinition.get("Or", {})
@@ -166,7 +145,7 @@ def getStateDefinitionSubStateDefinitionByPath(_stateDefinition, requiredComposi
 
 
 def setCompositionStateDefinitionByPath(_component, _stateDefinition, _stateDefinitionPath):
-    _component, _stateDefinition = deepCopy(_component, _stateDefinition)
+    _component, _stateDefinition = utils.deepCopy(_component, _stateDefinition)
     for _sdWrap in _component.get("SD", []):
         if _sdWrap.keys()[0] == _stateDefinitionPath:
             _sdWrap[_sdWrap.keys()[0]] = _stateDefinition
@@ -175,7 +154,7 @@ def setCompositionStateDefinitionByPath(_component, _stateDefinition, _stateDefi
 
 
 def setStateDefinitionComposition(_sd, _composition):
-    _sd, _component = deepCopy(_sd, _composition)
+    _sd, _component = utils.deepCopy(_sd, _composition)
     cType = getStateDefinitionCompositionType(_sd)
     _sd[cType] = _composition
     return _sd
@@ -238,7 +217,7 @@ def getAllEvents(orComposition):
 
 def T_fire_J_F(junction, J, ss, tv):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print junction
     print "------"
     # for debugging purposes
@@ -249,7 +228,7 @@ def T_fire_J_F(junction, J, ss, tv):
 
 def T_end(junction, J, ss, tv):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print junction
     print "------"
     # for debugging purposes
@@ -260,11 +239,11 @@ def T_end(junction, J, ss, tv):
 
 def T_fire_J_N(junction, J, ss, tv, events):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print junction
     print "------"
     # for debugging purposes
-    junction, J, ss, tv = deepCopy(junction, J, ss, tv)
+    junction, J, ss, tv = utils.deepCopy(junction, J, ss, tv)
     jList = J.get(junction, [])
     resultTuples = []
     for _tss, _ttv in executeTList(jList, J, ss, tv, events):
@@ -281,11 +260,11 @@ def T_fire_J_N(junction, J, ss, tv, events):
 # t-rules start
 def tFire(transition, ss, tv):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print transition
     print "------"
     # for debugging purposes
-    ss, tv = deepCopy(ss, tv)
+    ss, tv = utils.deepCopy(ss, tv)
     ca = parseExpressionForAdding(transition.get("ca", ""))
     c = parseExpressionForAdding(transition.get("c", ""))
     event = parseExpressionForAdding(transition.get("e", ""))
@@ -303,11 +282,11 @@ def tFire(transition, ss, tv):
 
 def tNoFire(transition, ss, tv):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print transition
     print "------"
     # for debugging purposes
-    ss, tv = deepCopy(ss, tv)
+    ss, tv = utils.deepCopy(ss, tv)
     c = transition.get("c", "") if transition.get("c", "") != "" else "True"
     # if there is an event, the c should be empty string (the event acts like a guard)
     c = parseExpressionForAdding(c)
@@ -322,11 +301,11 @@ def tNoFire(transition, ss, tv):
 
 def tNoFire2(transition, ss, tv):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print transition
     print "------"
     # for debugging purposes
-    ss, tv = deepCopy(ss, tv)
+    ss, tv = utils.deepCopy(ss, tv)
     c = transition.get("c", "")
     ss["dtree"] = "{0}[{1}]".format(ss.get("dtree", ""), "t-no-fire-2-{0}".format(c))
     # transition returns only 1 symbolic state and one tv
@@ -335,13 +314,13 @@ def tNoFire2(transition, ss, tv):
 
 def executeTList(tList, J, ss, tv, events):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print events
     print tList
     print "------"
     # for debugging purposes
-    wtList, wss, wtv = deepCopy(tList, ss, tv)
-    J = copy.deepcopy(J) if J is not None else {}
+    wtList, wss, wtv = utils.deepCopy(tList, ss, tv)
+    J = utils.deepCopy(J)[0] if J is not None else {}
     # TList returns a set of symbolic states and tvs
     returnTuples = []
     if len(wtList) == 0:
@@ -358,7 +337,7 @@ def executeTList(tList, J, ss, tv, events):
     # here should be the check whether the transition fired to a state or junction
     if _tvtFire.get("d", "") in J.keys():
         for _ssj, _tvj in T_fire_J_N(_tvtFire.get("d", ""), J, _sstFire, _tvtFire, events):
-            _ssj, _tvj = deepCopy(_ssj, _tvj)
+            _ssj, _tvj = utils.deepCopy(_ssj, _tvj)
             _ssj["dtree"] = "{0}[{1}]".format(_ssj.get("dtree", ""), "T-fire")
             if len(wtList) == 0:
                 returnTuples.append(tuple((_ssj, _tvj)))
@@ -386,25 +365,25 @@ def executeTList(tList, J, ss, tv, events):
 
 def sd_no(stateDefinition, ss, tv, events):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print events
     print stateDefinition
     print "------"
     # for debugging purposes
-    stateDefinition, ss, tv = deepCopy(stateDefinition, ss, tv)
+    stateDefinition, ss, tv = utils.deepCopy(stateDefinition, ss, tv)
     ss["dtree"] = "{0}[{1}]".format(ss.get("dtree", ""), "sd-no")
     return [(stateDefinition, ss, tv)]
 
 
 def sd_init(stateDefinition, ss, tv, p, events):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print events
     print stateDefinition
     print "------"
     # for debugging purposes
     p = p if p is not None else ""
-    ss, tv, stateDefinition, p = deepCopy(ss, tv, stateDefinition, p)
+    ss, tv, stateDefinition, p = utils.deepCopy(ss, tv, stateDefinition, p)
     returnTuples = []
     action = getStateDefinitionActionString(stateDefinition, "en")
     # update delta and the derrivation tree
@@ -415,7 +394,7 @@ def sd_init(stateDefinition, ss, tv, p, events):
     _composition = stateDefinition.get(cType, {})
     # here one of the or-inits shall be called
     for _C, _ss, _tv in composition_init(_composition, stateDefinition.get("J", {}), ss, None, p, events):
-        _sd, _C, _ss, _tv = deepCopy(stateDefinition, _C, _ss, _tv)
+        _sd, _C, _ss, _tv = utils.deepCopy(stateDefinition, _C, _ss, _tv)
         _sd[cType] = _C
         _ss["dtree"] = "{0}[{1}]".format(_ss.get("dtree", ""), "sd-init")
         # think about the return tv type
@@ -429,13 +408,13 @@ def sd_init(stateDefinition, ss, tv, p, events):
 
 def sd_exit(stateDefinition, ss, tv, events):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print events
     print stateDefinition
     print "------"
     # for debugging purposes
     returnTuples = []
-    stateDefinition, ss, tv = deepCopy(stateDefinition, ss, tv)
+    stateDefinition, ss, tv = utils.deepCopy(stateDefinition, ss, tv)
     exitAction = getStateDefinitionActionString(stateDefinition, "ex")
     # ss["dtree"] = "{0}[{1}]".format(ss.get("dtree", ""), "sd-exit")
     # this can be only or_exit (update when AND component is developed)
@@ -444,7 +423,7 @@ def sd_exit(stateDefinition, ss, tv, events):
 
     for _C, _ssC, _tvC in composition_exit(_composition, stateDefinition.get("J", {}), ss, tv, events):
         # _ss has the value from the execution of the internal component
-        _sd, _C, _ssC, _tvC = deepCopy(stateDefinition, _C, _ssC, _tvC)
+        _sd, _C, _ssC, _tvC = utils.deepCopy(stateDefinition, _C, _ssC, _tvC)
         # update delta with exit action
         _ssC["delta"] = "{0}{1}".format(_ssC["delta"], exitAction)
         _ssC["dtree"] = "{0}[{1}]".format(_ssC.get("dtree", ""), "sd-exit")
@@ -463,13 +442,13 @@ def sd_exit(stateDefinition, ss, tv, events):
 
 def sd_fire(stateDefinition, ss, tv, events):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print events
     print stateDefinition
     print "------"
     # for debugging purposes
     returnTuples = []
-    stateDefinition, ss, tv = deepCopy(stateDefinition, ss, tv)
+    stateDefinition, ss, tv = utils.deepCopy(stateDefinition, ss, tv)
     exAction = getStateDefinitionActionString(stateDefinition, "ex")
     tvAction = parseExpressionForAdding(tv.get("a", ""))
     tv["a"] = ""
@@ -479,7 +458,7 @@ def sd_fire(stateDefinition, ss, tv, events):
     cType = getStateDefinitionCompositionType(stateDefinition)
     _composition = stateDefinition.get(cType, {})
     for _C, _ssC, _tvC in composition_exit(_composition, [], ss, tv, events):
-        _sd, _C, _ssC, _tv = deepCopy(stateDefinition, _C, _ssC, tv)
+        _sd, _C, _ssC, _tv = utils.deepCopy(stateDefinition, _C, _ssC, tv)
         _ssC["delta"] = "{0}{1}".format(_ssC["delta"], exAction)
         _ssC["dtree"] = "{0}[{1}]".format(_ssC.get("dtree", ""), "sd-fire")
         _sd[cType] = _C
@@ -494,13 +473,13 @@ def sd_fire(stateDefinition, ss, tv, events):
 
 def sd_int_fire(stateDefinition, ss, tv, events):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print events
     print stateDefinition
     print "------"
     # for debugging purposes
 
-    stateDefinition, ss, tv = deepCopy(stateDefinition, ss, tv)
+    stateDefinition, ss, tv = utils.deepCopy(stateDefinition, ss, tv)
     tvAct = parseExpressionForAdding(tv.get("a", ""))
     sdAction = getStateDefinitionActionString(stateDefinition, "ex")
 
@@ -513,28 +492,28 @@ def sd_int_fire(stateDefinition, ss, tv, events):
 
 def executeSD(stateDefinition, ss, tv, p="", events=[]):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print events
     print stateDefinition
     print "------"
     # for debugging purposes
     # sd = ((a,a,a), C, Ti, To, J)
-    wsd, wss, wtv = deepCopy(stateDefinition, ss, tv)
+    wsd, wss, wtv = utils.deepCopy(stateDefinition, ss, tv)
     returnTuples = []
     cType = getStateDefinitionCompositionType(wsd)
 
     durationAction = getStateDefinitionActionString(wsd, "du")
 
     for _ssTo, _tvTo in executeTList(wsd.get("To", []), wsd.get("J", {}), wss, wtv, events):
-        _ssTo, _tvTo = deepCopy(_ssTo, _tvTo)
+        _ssTo, _tvTo = utils.deepCopy(_ssTo, _tvTo)
         if _tvTo.get("type", "") in [tvEnd, tvNo]:
             _ssTo["delta"] = "{0}{1}".format(_ssTo["delta"], durationAction)
             for _ssTi, _tvTi in executeTList(wsd.get("Ti", []), wsd.get("J", {}), _ssTo, _tvTo, events):
-                _sd, _ssTi, _tvTi = deepCopy(wsd, _ssTi, _tvTi)
+                _sd, _ssTi, _tvTi = utils.deepCopy(wsd, _ssTi, _tvTi)
                 _c1 = _sd.get(cType, {})
                 destinationPath = _tvTi.get("d", "") if _tvTi is not None else ""
                 for _c1C, _ssC, _tvC in executeComposition(_c1, {}, _ssTi, _tvTi, destinationPath, events):
-                    _sSd, _c1C, _ssC, _tvC = deepCopy(_sd, _c1C, _ssC, _tvC)
+                    _sSd, _c1C, _ssC, _tvC = utils.deepCopy(_sd, _c1C, _ssC, _tvC)
                     _sSd[cType] = _c1C
                     if _tvC.get("type", "") == tvFire:
                         returnTuples.extend(sd_int_fire(_sSd, _ssC, _tvC, events))
@@ -552,20 +531,20 @@ def executeSD(stateDefinition, ss, tv, p="", events=[]):
 
 def or_ext_fire_out(orComposition, J, ss, tv, events):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print events
     print orComposition
     print "------"
     # for debugging purposes
     resultTuples = []
-    wOr, wss, wtv = deepCopy(orComposition, ss, tv)
+    wOr, wss, wtv = utils.deepCopy(orComposition, ss, tv)
     fireAction = parseExpressionForAdding(wtv.get("a", ""))
     wtv["a"] = ""
     wss["delta"] = "{0}{1}".format(wss["delta"], fireAction)
     activeStateDefinition, notNeeded = getCompositionChildStateDefinitionByPath(
         orComposition, orComposition.get("sa", ""))
     for _sd, _ssSD, _tvSD in sd_exit(activeStateDefinition, ss, tv, events):
-        _orC, _sd, _ssSD, _tvSD = deepCopy(orComposition, _sd, _ssSD, _tvSD)
+        _orC, _sd, _ssSD, _tvSD = utils.deepCopy(orComposition, _sd, _ssSD, _tvSD)
         _orC["sa"] = ""
         _orC = setCompositionStateDefinitionByPath(_orC, _sd, orComposition.get("sa", ""))
         _ssSD["dtree"] = "{0}[{1}]".format(
@@ -576,19 +555,19 @@ def or_ext_fire_out(orComposition, J, ss, tv, events):
 
 def or_int_fire(orComposition, J, ss, tv, events):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print events
     print orComposition
     print "------"
     # for debugging purposes
-    orComposition, ss, tv = deepCopy(orComposition, ss, tv)
+    orComposition, ss, tv = utils.deepCopy(orComposition, ss, tv)
     resultTuples = []
     p = tv.get("d", "")
 
     stateDefinitionForActivation, stateDefinitionForActivationPath = getCompositionChildStateDefinitionByPath(
         orComposition, p)
     for _sd, _ssSD, _tvSD in sd_init(stateDefinitionForActivation, ss, tv, p, events):
-        _orC, _sd, _ssSD, _tvSD = deepCopy(orComposition, _sd, _ssSD, _tvSD)
+        _orC, _sd, _ssSD, _tvSD = utils.deepCopy(orComposition, _sd, _ssSD, _tvSD)
         _orC["sa"] = stateDefinitionForActivationPath
         _orC = setCompositionStateDefinitionByPath(_orC, _sd, stateDefinitionForActivationPath)
         _ssSD["dtree"] = "{0}[{1}]".format(
@@ -599,13 +578,13 @@ def or_int_fire(orComposition, J, ss, tv, events):
 
 def or_fire(orComposition, J, ss, tv, events):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print events
     print orComposition
     print "------"
     # for debugging purposes
     resultTuples = []
-    orComposition, J, ss, tv = deepCopy(orComposition, J, ss, tv)
+    orComposition, J, ss, tv = utils.deepCopy(orComposition, J, ss, tv)
     orComposition["sa"] = ""
     ss["dtree"] = "{0}[{1}]".format(
         ss.get("dtree", ""), "or-fire-{0}".format(orComposition.get("p", "")))
@@ -615,12 +594,12 @@ def or_fire(orComposition, J, ss, tv, events):
 
 def or_init_no_state(orComposition, J, ss, tv, events):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print events
     print orComposition
     print "------"
     # for debugging purposes
-    orComposition, ss, tv = deepCopy(orComposition, ss, tv)
+    orComposition, ss, tv = utils.deepCopy(orComposition, ss, tv)
     # only thing that we do is that we are adding the rule in the dtree
     ss["dtree"] = "{0}[{1}]".format(
         ss.get("dtree", ""), "or-init-no-state-{0}".format(orComposition.get("p", "")))
@@ -629,13 +608,13 @@ def or_init_no_state(orComposition, J, ss, tv, events):
 
 def or_init_empty_path(orComposition, J, ss, tv, events):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print events
     print orComposition
     print "------"
     # for debugging purposes
     resultTuples = []
-    orComposition, ss, tv = deepCopy(orComposition, ss, tv)
+    orComposition, ss, tv = utils.deepCopy(orComposition, ss, tv)
     for _ssT, _tvT in executeTList(orComposition.get("T", []), J, ss, tv, events):
         if _tvT.get("type", "") == tvFire:
             fireAction = "[{0}]".format(_tvT.get("a", "")) if _tvT.get("a", "") != "" else ""
@@ -646,7 +625,7 @@ def or_init_empty_path(orComposition, J, ss, tv, events):
             stateDefinitionForActivation = getCompositionSubStateDefinitionByPath(
                 orComposition, stateDefinitionForActivationPath)
             for _sd, _ssSD, _tvSD in sd_init(stateDefinitionForActivation, _ssT, None, "", events):
-                _orC, _sd, _ssSD, _tvSD = deepCopy(orComposition, _sd, _ssSD, _tvSD)
+                _orC, _sd, _ssSD, _tvSD = utils.deepCopy(orComposition, _sd, _ssSD, _tvSD)
                 _orC["sa"] = stateDefinitionForActivationPath
                 _orC = setCompositionStateDefinitionByPath(
                     _orC, _sd, stateDefinitionForActivationPath)
@@ -660,14 +639,14 @@ def or_init_empty_path(orComposition, J, ss, tv, events):
 
 def or_init(orComposition, J, ss, tv, p, events):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print events
     print orComposition
     print "------"
     # for debugging purposes
     resultTuples = []
     p = p if p is not None else ""
-    orComposition, J, ss, tv = deepCopy(orComposition, J, ss, tv)
+    orComposition, J, ss, tv = utils.deepCopy(orComposition, J, ss, tv)
     stateDefinitionForInitializing, stateDefinitionForInitializingPath = getCompositionChildStateDefinitionByPath(
         orComposition, p)
     # if this the state that needed to be activated with the propagating p,
@@ -675,7 +654,7 @@ def or_init(orComposition, J, ss, tv, p, events):
     if stateDefinitionForInitializingPath == p:
         p = ""
     for _sd, _ssSD, _tvSD in sd_init(stateDefinitionForInitializing, ss, tv, p, events):
-        _orC, _sd, _ssSD, _tvSD = deepCopy(orComposition, _sd, _ssSD, _tvSD)
+        _orC, _sd, _ssSD, _tvSD = utils.deepCopy(orComposition, _sd, _ssSD, _tvSD)
         _orC["sa"] = stateDefinitionForInitializingPath
         _orC = setCompositionStateDefinitionByPath(_orC, _sd, stateDefinitionForInitializingPath)
         _ssSD["dtree"] = "{0}[{1}]".format(
@@ -686,13 +665,13 @@ def or_init(orComposition, J, ss, tv, p, events):
 
 def or_exit(orComposition, J, ss, tv, events):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print events
     print orComposition
     print "------"
     # for debugging purposes
     resultTuples = []
-    orComposition, J, ss, tv = deepCopy(orComposition, J, ss, tv)
+    orComposition, J, ss, tv = utils.deepCopy(orComposition, J, ss, tv)
     activeStateDefinitionPath = orComposition.get("sa", "")
     if(activeStateDefinitionPath == ""):
         resultTuples.append(tuple((orComposition, ss, {"type": tvEnd})))
@@ -701,7 +680,7 @@ def or_exit(orComposition, J, ss, tv, events):
         orComposition, activeStateDefinitionPath)
 
     for _sd, _ssSD, _tvSD in sd_exit(activeStateDefinition, ss, tv, events):
-        _orC, _sd, _ssSD, _tvSD = deepCopy(orComposition, _sd, _ssSD, _tvSD)
+        _orC, _sd, _ssSD, _tvSD = utils.deepCopy(orComposition, _sd, _ssSD, _tvSD)
         _orC["sa"] = ""
         _orC = setCompositionStateDefinitionByPath(_orC, _sd, activeStateDefinitionPath)
         _ssSD["dtree"] = "{0}[{1}]".format(
@@ -712,13 +691,13 @@ def or_exit(orComposition, J, ss, tv, events):
 
 def or_no(orComposition, J, ss, tv, events):
     # for debugging purposes
-    print currentFuncName()
+    print utils.currentFuncName()
     print events
     print orComposition
     print "------"
     # for debugging purposes
     returnTuples = []
-    orComposition, ss, tv = deepCopy(orComposition, ss, tv)
+    orComposition, ss, tv = utils.deepCopy(orComposition, ss, tv)
     ss["dtree"] = "{0}[{1}]".format(
         ss.get("dtree", ""), "or-no-{0}".format(orComposition.get("p", "")))
     returnTuples.append(tuple((orComposition, ss, tv)))
@@ -727,7 +706,7 @@ def or_no(orComposition, J, ss, tv, events):
 
 def initialize_or(orComposition, J, ss, tv, p, events):
     resultTuples = []
-    orComposition, J, ss, tv, p = deepCopy(orComposition, J, ss, tv, p)
+    orComposition, J, ss, tv, p = utils.deepCopy(orComposition, J, ss, tv, p)
     # if the C element is empty
     if orComposition is None or orComposition == {}:
         return [tuple((orComposition, ss, tv))]
@@ -743,7 +722,7 @@ def initialize_or(orComposition, J, ss, tv, p, events):
 
 def executeOr(orComposition, J={}, ss=defaultSS(), tv=None, p="", events=[]):
     # here is the object of the composition, without the or
-    print currentFuncName()
+    print utils.currentFuncName()
     print events
     print orComposition
     print "------"
@@ -753,7 +732,7 @@ def executeOr(orComposition, J={}, ss=defaultSS(), tv=None, p="", events=[]):
         return [tuple((orComposition, ss, tv))]
     # prepare data for execution
     resultTuples = []
-    orComposition, J, ss, tv = deepCopy(orComposition, J, ss, tv)
+    orComposition, J, ss, tv = utils.deepCopy(orComposition, J, ss, tv)
     activeStateDefinitionPath = orComposition.get("sa", "")
     # prepare data for execution end
 
@@ -782,7 +761,7 @@ def executeOr(orComposition, J={}, ss=defaultSS(), tv=None, p="", events=[]):
                 orComposition, activeStateDefinitionPath)
             # now we need to execute the statedefinition
             for _sd, _ssSD, _tvSD in executeSD(activeStateDefinition, ss, tv, "", events):
-                _orC, _sd, _ssSD, _tvSD = deepCopy(orComposition, _sd, _ssSD, _tvSD)
+                _orC, _sd, _ssSD, _tvSD = utils.deepCopy(orComposition, _sd, _ssSD, _tvSD)
                 _orC = setCompositionStateDefinitionByPath(_orC, _sd, activeStateDefinitionPath)
                 # here again should be [tvNo, tvEnd] because there is no tvNo
                 # if _tvSD.get("type", "") == tvNo:
@@ -801,13 +780,13 @@ def executeOr(orComposition, J={}, ss=defaultSS(), tv=None, p="", events=[]):
 
 
 def and_rule(andComposition, J, ss, tv, events):
-    _andC, _ss, _tv = deepCopy(andComposition, ss, tv)
+    _andC, _ss, _tv = utils.deepCopy(andComposition, ss, tv)
     for sdWrap in andComposition.get("SD", []):
         pass
 
 
 def and_init(andComposition, J, ss, tv, p="", events=[]):
-    _andC, _ss, _tv, _p = deepCopy(andComposition, ss, tv, p)
+    _andC, _ss, _tv, _p = utils.deepCopy(andComposition, ss, tv, p)
     for sdWrap in andComposition.get("SD", []):
         sdName = sdWrap.keys()[0]
         sd = sdWrap[sdName]
@@ -819,7 +798,7 @@ def and_init(andComposition, J, ss, tv, p="", events=[]):
 
 
 def and_exit(andComposition, J, ss, tv, events):
-    _andC, _ss, _tv = deepCopy(andComposition, ss, tv)
+    _andC, _ss, _tv = utils.deepCopy(andComposition, ss, tv)
     for sdWrap in andComposition.get("SD", []):
         sdName = sdWrap.keys()[0]
         _sd = sdWrap[sdName]
@@ -868,8 +847,8 @@ def executeComposition(composition, J={}, ss=defaultSS(), tv=None, p="", events=
 
 
 def executeSymbolicallyRecursive(program, ss, tv={}, exploredExecutions=set()):
-    _ss, _tv, _exploredExecutions = deepCopy(ss, tv, exploredExecutions)
-    print currentFuncName()
+    _ss, _tv, _exploredExecutions = utils.deepCopy(ss, tv, exploredExecutions)
+    print utils.currentFuncName()
     print program
     print "------"
     # get the events. In case no events, we create a list of
@@ -888,7 +867,7 @@ def executeSymbolicallyRecursive(program, ss, tv={}, exploredExecutions=set()):
         # return orExecutions, set()
         # this will not execute
         for _newProgram, _ssOr, _tvOr in orExecutions:
-            _newProgram, _ssOr, _tvOr = deepCopy(_newProgram, _ssOr, _tvOr)
+            _newProgram, _ssOr, _tvOr = utils.deepCopy(_newProgram, _ssOr, _tvOr)
             _newProgramActiveStatesString = "".join(getOrCompositionActiveStatesPaths(_newProgram))
             transition = {"source": "{0}".format(currentProgramActiveStatesString),
                           "destination": "{0}".format(_newProgramActiveStatesString),
@@ -914,33 +893,3 @@ def executeSymbolically(program):
     # return only the transitionRelation, which is the first component
     # of the return tuple of the recursive function
     return executeSymbolicallyRecursive(program.get("Or", {}), defaultSS(), None)[0]
-
-
-def main():
-    _program = loadProgram("./models/stopwatch.json")
-    programComposition = _program.get("Or", {})
-
-    rezult = executeSymbolically(_program)
-    final = []
-    unfeasible = []
-    duplicates = []
-    for itm in rezult:
-        if itm not in final:
-            if "[neg ([True])]" not in itm.get("pc", ""):
-                final.append(itm)
-            else:
-                unfeasible.append(itm)
-        else:
-            duplicates.append(itm)
-
-    print "all {0}".format(len(rezult))
-    print "final {0}".format(len(final))
-    print "unfeasible {0}".format(len(unfeasible))
-    print "duplicates {0}".format(len(duplicates))
-    for itm in []:
-        print itm
-        print "\n"
-    print "++++++++++++++++++++++"
-
-
-main()
