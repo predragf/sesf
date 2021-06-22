@@ -4,7 +4,7 @@ import copy
 
 def currentFuncName(n=0): return sys._getframe(n + 1).f_code.co_name
 
-def openFile(filePath):
+def open_file(filePath):
     _file = None
     try:
         absFilePath = os.path.abspath(filePath)
@@ -13,7 +13,7 @@ def openFile(filePath):
         print exc
     return _file
 
-def deepCopy(*arguments):
+def deep_copy(*arguments):
     returnArguments = []
     for argument in arguments:
         returnArguments.append(copy.deepcopy(argument))
