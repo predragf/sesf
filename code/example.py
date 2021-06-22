@@ -6,10 +6,10 @@ def main():
         print("please call this script with a stateflow program location")
         return
 
-    _program = loadProgram(sys.argv[1])
+    _program = load_program(sys.argv[1])
     programComposition = _program.get("Or", {})
 
-    rezult = executeSymbolically(_program)
+    rezult = execute_symbolically(_program)
     final = []
     unfeasible = []
     duplicates = []
