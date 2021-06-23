@@ -83,14 +83,13 @@ def get_and_composition_active_states_paths(andComposition):
 
 def get_state_definition_active_states_paths(stateDefinition):
     activeStates = []
-    if stateDefinition is None or stateDefinition == {}:
-        return activeStates
-    composition = get_state_definition_composition(stateDefinition)
-    compositionType = get_state_definition_composition_type(stateDefinition)
-    if compositionType == "Or":
-        activeStates.extend(get_or_composition_active_states_paths(composition))
-    elif compositionType == "And":
-        activeStates.extend(get_and_composition_active_states_paths(composition))
+    if stateDefinition is not None and stateDefinition != {}:
+        composition = get_state_definition_composition(stateDefinition)
+        compositionType = get_state_definition_composition_type(stateDefinition)
+        if compositionType == "Or":
+            activeStates.extend(get_or_composition_active_states_paths(composition))
+        elif compositionType == "And":
+            activeStates.extend(get_and_composition_active_states_paths(composition))
     return activeStates
 
 
