@@ -211,8 +211,8 @@ def get_all_events(orComposition):
 
     # helper functions end
 
-    # J-rules start
 
+# T-rules start
 
 def T_fire_J_F(junction, J, ss, tv):
     # for debugging purposes
@@ -253,10 +253,12 @@ def T_fire_J_N(junction, J, ss, tv, events):
         elif _ttv.get("type", "") == tvNo:
             resultTuples.append(tuple((_tss, _ttv)))
     return resultTuples
-# J-rules end
+
+# T-rules end
 
 
 # t-rules start
+
 def t_fire(transition, ss, tv):
     # for debugging purposes
     print utils.currentFuncName()
@@ -333,7 +335,7 @@ def execute_T_list(tList, J, ss, tv, events):
         returnTuples.extend(execute_T_list(wtList, J, _ssNo2, _tvNo2, events))
         return returnTuples
     _sstFire, _tvtFire = t_fire(head, wss, wtv)
-    # here should be the check whether the transition fired to a state or junction
+    # here is a check whether the transition fired to a state or junction
     if _tvtFire.get("d", "") in J.keys():
         for _ssj, _tvj in T_fire_J_N(_tvtFire.get("d", ""), J, _sstFire, _tvtFire, events):
             _ssj, _tvj = utils.deep_copy(_ssj, _tvj)
@@ -361,7 +363,6 @@ def execute_T_list(tList, J, ss, tv, events):
 
 # sd-rules start
 
-
 def sd_no(stateDefinition, ss, tv, events):
     # for debugging purposes
     print utils.currentFuncName()
@@ -387,7 +388,6 @@ def sd_init(stateDefinition, ss, tv, p, events):
     action = get_state_definition_action_string(stateDefinition, "en")
     # update delta and the derrivation tree
     ss["delta"] = "{0}{1}".format(ss["delta"], action)
-    # ss["dtree"] = "{0}[{1}]".format(ss.get("dtree", ""), "sd-init")
     # execute the internal composition
     cType = get_state_definition_composition_type(stateDefinition)
     _composition = stateDefinition.get(cType, {})
@@ -396,7 +396,6 @@ def sd_init(stateDefinition, ss, tv, p, events):
         _sd, _C, _ss, _tv = utils.deep_copy(stateDefinition, _C, _ss, _tv)
         _sd[cType] = _C
         _ss["dtree"] = "{0}[{1}]".format(_ss.get("dtree", ""), "sd-init")
-        # think about the return tv type
         returnTuples.append(tuple((_sd, _ss, tv)))
     # this is the case if there was no component
     if len(returnTuples) < 1:
@@ -415,8 +414,6 @@ def sd_exit(stateDefinition, ss, tv, events):
     returnTuples = []
     stateDefinition, ss, tv = utils.deep_copy(stateDefinition, ss, tv)
     exitAction = get_state_definition_action_string(stateDefinition, "ex")
-    # ss["dtree"] = "{0}[{1}]".format(ss.get("dtree", ""), "sd-exit")
-    # this can be only or_exit (update when AND component is developed)
     cType = get_state_definition_composition_type(stateDefinition)
     _composition = stateDefinition.get(cType, {})
 
@@ -427,10 +424,9 @@ def sd_exit(stateDefinition, ss, tv, events):
         _ssC["delta"] = "{0}{1}".format(_ssC["delta"], exitAction)
         _ssC["dtree"] = "{0}[{1}]".format(_ssC.get("dtree", ""), "sd-exit")
         _sd[cType] = _C
-        # there should in principle be no tv at the end of this rule
-        # however, I am returning the input tv
+        # in principle, there should be an NO-tv at the end of this rule,
+        # however, we are returning the tv which was passed as an input
         returnTuples.append(tuple((_sd, _ssC, tv)))
-
     # this is the case when there was no component
     if len(returnTuples) < 1:
         ss["delta"] = "{0}{1}".format(ss["delta"], exitAction)
@@ -452,8 +448,6 @@ def sd_fire(stateDefinition, ss, tv, events):
     tvAction = parse_expression_for_adding(tv.get("a", ""))
     tv["a"] = ""
     ss["delta"] = "{0}{1}".format(ss["delta"], tvAction)
-    # ss["dtree"] = "{0}[{1}]".format(ss.get("dtree", ""), "sd-fire")
-    # or-exit shall be called here - update for AND component once developed
     cType = get_state_definition_composition_type(stateDefinition)
     _composition = stateDefinition.get(cType, {})
     for _C, _ssC, _tvC in composition_exit(_composition, [], ss, tv, events):
@@ -488,6 +482,7 @@ def sd_int_fire(stateDefinition, ss, tv, events):
 
     return [tuple((stateDefinition, ss, tv))]
 
+# sd-rules end
 
 def execute_sd(stateDefinition, ss, tv, p="", events=[]):
     # for debugging purposes
@@ -496,7 +491,6 @@ def execute_sd(stateDefinition, ss, tv, p="", events=[]):
     print stateDefinition
     print "------"
     # for debugging purposes
-    # sd = ((a,a,a), C, Ti, To, J)
     wsd, wss, wtv = utils.deep_copy(stateDefinition, ss, tv)
     returnTuples = []
     cType = get_state_definition_composition_type(wsd)
@@ -516,7 +510,7 @@ def execute_sd(stateDefinition, ss, tv, p="", events=[]):
                     _sSd[cType] = _c1C
                     if _tvC.get("type", "") == tvFire:
                         returnTuples.extend(sd_int_fire(_sSd, _ssC, _tvC, events))
-                    # this sould in principle be only tv no, but since in
+                    # in principle, this should be only NO-tv, but since in
                     # symbolic execution we do not have a no, then we treat it
                     # the same as end (this text concerns the if below)
                     elif _tvC.get("type", "") in [tvNo, tvEnd]:
@@ -527,6 +521,7 @@ def execute_sd(stateDefinition, ss, tv, p="", events=[]):
             returnTuples.extend(sd_fire(wsd, _ssTo, _tvTo, events))
     return returnTuples
 
+# or-rules start
 
 def or_ext_fire_out(orComposition, J, ss, tv, events):
     # for debugging purposes
@@ -619,7 +614,7 @@ def or_init_empty_path(orComposition, J, ss, tv, events):
             fireAction = "[{0}]".format(_tvT.get("a", "")) if _tvT.get("a", "") != "" else ""
             # we will use the a, so it will be reset
             _tvT["a"] = ""
-            # the assumption is that you will always initialize the direct child
+            # the assumption is that we always initialize the direct child
             stateDefinitionForActivationPath = _tvT.get("d", "")
             stateDefinitionForActivation = get_composition_sub_state_definition_by_path(
                 orComposition, stateDefinitionForActivationPath)
@@ -632,7 +627,6 @@ def or_init_empty_path(orComposition, J, ss, tv, events):
                 _ssSD["dtree"] = "{0}[{1}]".format(
                     _ssSD.get("dtree", ""), "or-init-empty-path-{0}".format(_orC.get("p", "")))
                 resultTuples.append(tuple((_orC, _ssSD, tv)))
-
     return resultTuples
 
 
@@ -677,7 +671,6 @@ def or_exit(orComposition, J, ss, tv, events):
         return resultTuples
     activeStateDefinition = get_composition_sub_state_definition_by_path(
         orComposition, activeStateDefinitionPath)
-
     for _sd, _ssSD, _tvSD in sd_exit(activeStateDefinition, ss, tv, events):
         _orC, _sd, _ssSD, _tvSD = utils.deep_copy(orComposition, _sd, _ssSD, _tvSD)
         _orC["sa"] = ""
@@ -717,6 +710,8 @@ def initialize_or(orComposition, J, ss, tv, p, events):
         else:
             resultTuples.extend(or_init_no_state(orComposition, J, ss, tv, events))
     return resultTuples
+
+# or-rules end
 
 
 def execute_or(orComposition, J={}, ss=generate_default_ss(), tv=None, p="", events=[]):
@@ -777,6 +772,7 @@ def execute_or(orComposition, J={}, ss=generate_default_ss(), tv=None, p="", eve
             raise Exception('Error', 'I should not have happened')
     return resultTuples
 
+# and-rules start
 
 def and_rule(andComposition, J, ss, tv, events):
     _andC, _ss, _tv = utils.deep_copy(andComposition, ss, tv)
@@ -817,7 +813,7 @@ def execute_and(andComposition, J={}, ss=generate_default_ss(), tv=None, p="", e
 
 def composition_exit(composition, J, ss, tv, events):
     # this means that and_exit is called only for valid And composition. In
-    # case of a valid OR composition or empty composition {}, then or_exit
+    # case of a valid OR composition or an empty OR composition {}, then or_exit
     # is called
     if len(composition.keys()) == 2:
         return and_exit(composition, J, ss, tv, events)
@@ -833,6 +829,8 @@ def composition_init(composition, J, ss, tv, p, events):
         return and_init(composition, J, ss, tv, events)
     else:
         return initialize_or(composition, J, ss, tv, p, events)
+
+# and-rules end
 
 
 def execute_composition(composition, J={}, ss=generate_default_ss(), tv=None, p="", events=[]):
