@@ -1,0 +1,46 @@
+{
+  "Or": {
+    "sa":"",
+    "p": "Stopwatch",
+    "T": [{"e": "", "c": "", "ca": "", "ta":"", "d": "Stopwatch.Stop"}],
+    "SD": [
+      {
+        "Stopwatch.Stop": {
+        "A": {
+          "en": "",
+          "du": "",
+          "ex": ""
+        },
+        "And":{
+          "p": "Stopwatch.Stop",
+          "T": [],
+          "SD": [{
+          				"Stopwatch.Stop.Reset": {
+          					"A": {
+          						"en": "",
+          						"du": "x = x + 1;",
+          						"ex": ""
+          					},
+          					"Ti": [],
+          					"To": [],
+                    "J":{}
+          				}
+          			},
+                {
+                		"Stopwatch.Stop.Lap_stop": {
+                					"A": {
+                						"en": "",
+                						"du": "y = y - 1;",
+                						"ex": ""
+                					},
+                					"Ti": [],
+                					"To": []
+                				}
+                }]
+        },
+        "Ti": []
+      }
+      }
+    ]
+  }
+}
