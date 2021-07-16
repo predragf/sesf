@@ -2,7 +2,7 @@ import sys
 import os
 import copy
 
-def currentFuncName(n=0): return sys._getframe(n + 1).f_code.co_name
+def current_function_name(n=0): return sys._getframe(n + 1).f_code.co_name
 
 def open_file(filePath):
     _file = None
@@ -10,7 +10,7 @@ def open_file(filePath):
         absFilePath = os.path.abspath(filePath)
         _file = open(absFilePath, "r")
     except Exception as exc:
-        print exc
+        print(exc)
     return _file
 
 def deep_copy(*arguments):

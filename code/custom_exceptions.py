@@ -1,0 +1,2 @@
+class TransitionValueException(Exception):
+    pass 

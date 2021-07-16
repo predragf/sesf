@@ -1,5 +1,6 @@
 from sesf import *
 import sys
+from custom_enums import *
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] == "":
@@ -22,14 +23,11 @@ def main():
         else:
             duplicates.append(itm)
 
-    print "all {0}".format(len(rezult))
-    print "final {0}".format(len(final))
-    print "unfeasible {0}".format(len(unfeasible))
-    print "duplicates {0}".format(len(duplicates))
-    for itm in []:
-        print itm
-        print "\n"
-    print "++++++++++++++++++++++"
-
+    print(f'all {len(rezult)}')
+    print(f"final {len(final)}")
+    print(f"unfeasible {len(unfeasible)}")
+    print(f"duplicates {len(duplicates)}")
+    for itm in rezult:
+        print(f"{itm}\n")
 
 main()
