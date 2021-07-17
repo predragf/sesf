@@ -1,4 +1,4 @@
-from sesf import *
+from sesf import SESF
 import sys
 from custom_enums import *
 
@@ -7,10 +7,10 @@ def main():
         print("please call this script with a stateflow program location")
         return
 
-    _program = load_program(sys.argv[1])
+    _program = SESF.load_program(sys.argv[1])
     programComposition = _program.get("Or", {})
 
-    rezult = execute_symbolically(_program)
+    rezult = SESF.execute_symbolically(_program)
     final = []
     unfeasible = []
     duplicates = []

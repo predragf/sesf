@@ -2,8 +2,6 @@ import sys
 import os
 import copy
 
-def current_function_name(n=0): return sys._getframe(n + 1).f_code.co_name
-
 def open_file(filePath):
     _file = None
     try:
