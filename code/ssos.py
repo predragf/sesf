@@ -399,9 +399,10 @@ class OrCompositionRules:
 
     @staticmethod
     @print_enter_exit_decorator
-    def execute_or(or_composition, J={},symbolic_state=generate_default_ss(), transition_value=None, p = "", events=None):
+    def execute_or(or_composition, J=None,symbolic_state=generate_default_ss(), transition_value=None, p = "", events=None):
         # or = (sa, p, T, SD)
         # if the composition object is empty, do not process.
+        J = J if J is not None else {}
         if or_composition is not None and or_composition == {}:
             return [tuple((or_composition,symbolic_state, transition_value))]
         # prepare data for execution
@@ -507,8 +508,9 @@ class AndCompositionRules:
 
     @staticmethod
     @print_enter_exit_decorator
-    def execute_and(and_composition, J={}, symbolic_state=generate_default_ss(), transition_value=None, p = "", events=None):
+    def execute_and(and_composition, J=None, symbolic_state=generate_default_ss(), transition_value=None, p = "", events=None):
         events = events if events is not None else []
+        J = J if J is not None else {}
         if and_composition.get("b", "") == "True":
             return AndCompositionRules.and_rule(and_composition, J, symbolic_state, transition_value, events)
         else:
@@ -551,10 +553,11 @@ class CompositeStateRules:
 
     @staticmethod
     @print_enter_exit_decorator
-    def execute_composition(composition, J={}, symbolic_state=generate_default_ss(), transition_value=None, p = "", events=None):
+    def execute_composition(composition, J=None, symbolic_state=generate_default_ss(), transition_value=None, p = "", events=None):
         # this means that executeAnd is called only for valid And composition. In
         # case of a valid OR composition or empty composition {}, then executeOr
         # is called
+        J = J if J is not None else {}
         events = events if events is not None else []
         if len(composition.keys()) == 2:
             return AndCompositionRules.execute_and(composition, J, symbolic_state, transition_value, events)
