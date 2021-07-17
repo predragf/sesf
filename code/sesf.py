@@ -22,7 +22,7 @@ class SESF:
         return program
 
     @staticmethod
-    def execute_symbolically_recursive(program, symbolic_state, transition_value = None, explored_executions = None):
+    def execute_symbolically_recursive(program, symbolic_state, transition_value=None, explored_executions=None):
         transition_value = transition_value if transition_value is not None else {}
         explored_executions = explored_executions if explored_executions is not None else set()
         symbolic_state_fresh_copy, transition_value_fresh_copy, explored_executions_fresh_copy = utils.deep_copy(symbolic_state, transition_value, explored_executions)

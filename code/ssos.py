@@ -215,7 +215,7 @@ class StateDefinitionRules:
 
     @staticmethod
     @print_enter_exit_decorator
-    def execute_state_definition(state_definition, ss, tv, p = "", events = None):
+    def execute_state_definition(state_definition, ss, tv, p = "", events=None):
         events = events if events is not None else []
         state_definition_fresh, symbolic_state_fresh, transition_value_fresh = utils.deep_copy(state_definition, ss, tv)
         return_tuples = []
@@ -399,7 +399,7 @@ class OrCompositionRules:
 
     @staticmethod
     @print_enter_exit_decorator
-    def execute_or(or_composition, J={},symbolic_state=generate_default_ss(), transition_value = None, p = "", events = None):
+    def execute_or(or_composition, J={},symbolic_state=generate_default_ss(), transition_value=None, p = "", events=None):
         # or = (sa, p, T, SD)
         # if the composition object is empty, do not process.
         if or_composition is not None and or_composition == {}:
@@ -480,7 +480,7 @@ class AndCompositionRules:
 
     @staticmethod
     @print_enter_exit_decorator
-    def and_init(and_composition, J, symbolic_state, tv, p = "", events = None):
+    def and_init(and_composition, J, symbolic_state, tv, p = "", events=None):
         events = events if events is not None else []
         and_composition_fresh_copy, symbolic_state_fresh_copy, transition_value_fresh_copy, _p = utils.deep_copy(and_composition, symbolic_state, tv, p)
         for stae_definition_wrapper in and_composition.get("SD", []):
@@ -507,7 +507,7 @@ class AndCompositionRules:
 
     @staticmethod
     @print_enter_exit_decorator
-    def execute_and(and_composition, J={}, symbolic_state=generate_default_ss(), transition_value = None, p = "", events = None):
+    def execute_and(and_composition, J={}, symbolic_state=generate_default_ss(), transition_value=None, p = "", events=None):
         events = events if events is not None else []
         if and_composition.get("b", "") == "True":
             return AndCompositionRules.and_rule(and_composition, J, symbolic_state, transition_value, events)
@@ -551,7 +551,7 @@ class CompositeStateRules:
 
     @staticmethod
     @print_enter_exit_decorator
-    def execute_composition(composition, J={}, symbolic_state=generate_default_ss(), transition_value = None, p = "", events = None):
+    def execute_composition(composition, J={}, symbolic_state=generate_default_ss(), transition_value=None, p = "", events=None):
         # this means that executeAnd is called only for valid And composition. In
         # case of a valid OR composition or empty composition {}, then executeOr
         # is called
