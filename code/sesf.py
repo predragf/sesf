@@ -62,9 +62,7 @@ class SESF:
         return transition_relation, explored_executions
 
     @staticmethod
-    def execute_symbolically(program):
-        # at the top level, a Stateflow program is ALWAYS an Or-composition
-        # return only the transitionRelation, which is the first component
-        # of the return tuple of the recursive function
-        complete_transition_relation = SESF.execute_symbolically_recursive(program.get("Or", {}), generate_default_ss(), None)[0]
+    def execute_symbolically(program_location):        
+        stateflow_program = SESF.load_program(program_location)
+        complete_transition_relation = SESF.execute_symbolically_recursive(stateflow_program.get("Or", {}), generate_default_ss(), None)[0]
         return complete_transition_relation

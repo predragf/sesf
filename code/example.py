@@ -7,10 +7,8 @@ def main():
         print("please call this script with a stateflow program location")
         return
 
-    _program = SESF.load_program(sys.argv[1])
-    programComposition = _program.get("Or", {})
-
-    rezult = SESF.execute_symbolically(_program)
+    program_location = sys.argv[1]    
+    rezult = SESF.execute_symbolically(program_location)
     final = []
     unfeasible = []
     duplicates = []
